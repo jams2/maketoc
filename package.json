@@ -1,0 +1,17 @@
+{
+    "name": "maketoc",
+    "version": "1.0.0",
+    "main": "maketoc.js",
+    "author": "Joshua Munn",
+    "license": "GPL-3.0-or-later",
+    "scripts": {
+        "dev": "tailwindcss -i src/maketoc.css -o dist/maketoc.css --watch",
+        "build": "tailwindcss -i src/maketoc.css -o dist/maketoc.css"
+    },
+    "devDependencies": {
+        "tailwindcss": "^2.2.2"
+    },
+    "dependencies": {
+        "@tailwindcss/typography": "^0.4.1"
+    }
+}

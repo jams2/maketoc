@@ -1,0 +1,19 @@
+{
+    "manifest_version": 2,
+    "name": "maketoc",
+    "version": "1.0",
+    "icons": {
+        "48": "icons/toc_black_48dp.svg"
+    },
+    "permissions": ["activeTab"],
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "js": ["maketoc.js"],
+        "css": ["dist/maketoc.css"],
+        "match_about_blank": true
+    }],
+    "browser_action": {
+        "default_icon": "icons/toc_black_48dp.svg",
+        "default_title": "maketoc"
+    }
+}

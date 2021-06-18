@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#mktc-container ol {
+    margin-top: 0 !important;
+    list-style-type: none !important;
+}
+
+#mktc-container a {
+    text-decoration: none !important;
+}
+
+#mktc-container li {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+}
