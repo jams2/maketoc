@@ -1,5 +1,5 @@
 .editorconfig
 .cache
-.log
+*.log
 dist/*
 node_modules

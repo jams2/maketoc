@@ -5,15 +5,46 @@
     "icons": {
         "48": "icons/toc_black_48dp.svg"
     },
-    "permissions": ["activeTab"],
+    "permissions": ["activeTab", "tabs"],
     "content_scripts": [{
         "matches": ["<all_urls>"],
         "js": ["maketoc.js"],
         "css": ["dist/maketoc.css"],
         "match_about_blank": true
     }],
-    "browser_action": {
-        "default_icon": "icons/toc_black_48dp.svg",
-        "default_title": "maketoc"
+    "background": {
+        "page": "background.html"
+    },
+    "commands": {
+        "toggle-feature": {
+            "suggested_key": {
+                "default": "Shift+Alt+M"
+            },
+            "description": "Toggle the plugin on/off"
+        },
+        "toggle-toc": {
+            "suggested_key": {
+                "default": "Shift+Alt+Comma"
+            },
+            "description": "Expand/hide the Table of Contents element"
+        },
+        "refresh-toc": {
+            "suggested_key": {
+                "default": "Shift+Alt+Period"
+            },
+            "description": "Rebuild the index"
+        },
+        "toggle-toc-mode": {
+            "description": "Switch between flat and tree view",
+            "suggested_key": {
+                "default": "Shift+Alt+Up"
+            }
+        },
+        "toggle-sub-tocs": {
+            "description": "Toggle all sub-menus open/closed (tree mode only)",
+            "suggested_key": {
+                "default": "Shift+Alt+Right"
+            }
+        }
     }
 }

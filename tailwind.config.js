@@ -1,4 +1,5 @@
 module.exports = {
+    important: true,
     mode: "jit",
     prefix: "mktc-",
     corePlugins: { preflight: false },
