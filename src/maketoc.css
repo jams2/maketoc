@@ -563,3 +563,4 @@ Add the correct display in Chrome and Safari.
 #mktc-container details[open=""] > summary {
     @apply mktc-border-b-2 mktc-pb-2;
 }
+

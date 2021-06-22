@@ -11,6 +11,7 @@ module.exports = {
                 '3/4': '75vh',
             }
         },
+        zIndex: { "max": "2147483647" }
     },
     variants: {
         extend: {},

@@ -1,3 +1,5 @@
+"use strict";
+
 (function () {
     const TOGGLE_FEATURE = "toggle-feature";
     const TOGGLE_TOC = "toggle-toc";
@@ -16,7 +18,8 @@ mktc-font-sans
 mktc-top-8 mktc-left-8 mktc-fixed
 mktc-bg-white mktc-prose mktc-prose-sm
 mktc-rounded-lg mktc-shadow-md hover:mktc-shadow-lg mktc-transition-shadow mktc-duration-300
-mktc-max-h-3/4 mktc-overflow-x-hidden mktc-overflow-y-hidden`;
+mktc-max-h-3/4 mktc-overflow-x-hidden mktc-overflow-y-hidden
+mktc-z-max`;
 
     const TOC_CLASSES = `
 mktc-hidden mktc-pb-4 mktc-pr-8 mktc-pl-2 mktc-mt-0
@@ -35,6 +38,13 @@ mktc-p-0 mktc-py-2 last-of-type:mktc-pb-0
 mktc-border-b-2 last-of-type:mktc-border-b-0`;
 
     const SUMMARY_CLASSES = ``;
+
+    const initialState = { tocOpen: false, subNavExpanded: false }
+
+    function* state(initial = initialState) {
+        let currentState = initialState;
+        yield currentState;
+    }
 
     function compose(g, f) {
         return function (x) {
@@ -282,4 +292,6 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
     }
 
     browser.runtime.onMessage.addListener(receiveMessage);
+    let gen = state();
+    console.log(gen.next());
 })();
