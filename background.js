@@ -9,6 +9,8 @@ function logError(error) {
 }
 
 function dispatchKeyEvent(message) {
+    console.group("MAKETOC MESSAGE DISPATCH");
+    console.debug(message);
     switch (message) {
         case TOGGLE_FEATURE:
         case TOGGLE_TOC:
@@ -20,6 +22,7 @@ function dispatchKeyEvent(message) {
         default:
             console.error(`Unknown message (${message})`);
     }
+    console.groupEnd();
 }
 
 function sendMessage(message) {

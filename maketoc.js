@@ -6,9 +6,10 @@
     const REFRESH_TOC = "refresh-toc";
     const TOGGLE_MODE = "toggle-toc-mode";
     const TOGGLE_SUB_TOCS = "toggle-sub-tocs";
+    const RESET_STATE = "reset-state";
 
-    const TYPE_FLAT = "flat";
-    const TYPE_TREE = "tree";
+    const TYPE_TREE = true;
+    const TYPE_FLAT = false;
 
     const TITLE_MAX_LENGTH = 50;
     const RIGHT_ARROW = "→";
@@ -17,19 +18,18 @@
 mktc-font-sans
 mktc-top-8 mktc-left-8 mktc-fixed
 mktc-bg-white mktc-prose mktc-prose-sm
-mktc-rounded-lg mktc-shadow-md hover:mktc-shadow-lg mktc-transition-shadow mktc-duration-300
+mktc-rounded-md mktc-shadow-md hover:mktc-shadow-lg mktc-transition-shadow mktc-duration-300
 mktc-max-h-3/4 mktc-overflow-x-hidden mktc-overflow-y-hidden
 mktc-z-max`;
 
     const TOC_CLASSES = `
 mktc-hidden mktc-pb-4 mktc-pr-8 mktc-pl-2 mktc-mt-0
-mktc-text-sm mktc-text-gray-900`;
+mktc-text-sm mktc-text-gray-900 mktc-mt-1`;
 
-    const PLACEHOLDER_CLASSES = `
-mktc-block
-mktc-text-5xl mktc-font-bold mktc-cursor-pointer mktc-w-min
-mktc-mr-auto mktc-py-1 mktc-px-3
-mktc-transform mktc-transition-transform mktc-duration-300`;
+    const TITLE_CLASSES = `
+mktc-block mktc-cursor-pointer mktc-w-auto
+mktc-mr-auto mktc-px-4 mktc-py-2
+mktc-bg-green-100 mktc-text-green-900 mktc-font-bold`;
 
     const OL_CLASSES = `mktc-p-0 mktc-pl-8`;
 
@@ -39,11 +39,61 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
 
     const SUMMARY_CLASSES = ``;
 
-    const initialState = { tocOpen: false, subNavExpanded: false }
+    const initialState = { featureOpen: false, tocOpen: false, subNavExpanded: false, tocType: TYPE_TREE };
 
-    function* state(initial = initialState) {
-        let currentState = initialState;
-        yield currentState;
+    function* sequence() {
+        let val = 1;
+        while (true)
+            yield val++;
+    }
+
+    function* _reducer(initial = initialState) {
+        const sequenceGenerator = sequence();
+        let currentState = initial;
+        let message = yield currentState;
+
+        while (true) {
+            console.group(`MAKETOC REDUCER (${sequenceGenerator.next().value})`)
+            console.debug(message);
+            console.debug(currentState);
+            switch (message) {
+                case TOGGLE_FEATURE:
+                    currentState = { ...currentState, featureOpen: !currentState.featureOpen };
+                    break;
+                case TOGGLE_TOC:
+                    if (!currentState.featureOpen && !currentState.tocOpen) {
+                        currentState = { ...currentState, tocOpen: true, featureOpen: true };
+                    } else {
+                        currentState = { ...currentState, tocOpen: !currentState.tocOpen };
+                    }
+                    break;
+                case TOGGLE_SUB_TOCS:
+                    currentState = { ...currentState, subNavExpanded: !currentState.subNavExpanded };
+                    break;
+                case TOGGLE_MODE:
+                    currentState = { ...currentState, tocType: !currentState.tocType };
+                    break;
+                case RESET_STATE:
+                    currentState = initialState;
+                    break;
+            }
+            console.debug(currentState);
+            console.groupEnd()
+            message = yield currentState;
+        }
+    }
+
+    function initReducer() {
+        const reducer = _reducer();
+        console.debug(reducer.next().value);
+        return { reducer, state: "foo" };
+    }
+
+    function _updateState(reducer, message) {
+        const nextState = reducer.next(message).value;
+        const event = new CustomEvent("updatetocstate", { detail: { state: nextState } });
+        document.querySelectorAll("[data-toc-listen]").forEach(element => element.dispatchEvent(event));
+        return nextState;
     }
 
     function compose(g, f) {
@@ -57,6 +107,12 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
             return f(...args, ...rest);
         }
     }
+
+
+    const { reducer } = initReducer();
+    const updateState = partial(_updateState, reducer);
+    const getState = updateState;
+
 
     function createElement(tagName, attrs = {}, dataset = {}) {
         const elt = Object.assign(document.createElement(tagName), attrs);
@@ -185,40 +241,72 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
             {
                 tabIndex: "0",
                 id: "mktc-placeholder",
-                className: PLACEHOLDER_CLASSES,
-                textContent: RIGHT_ARROW,
-                onclick: toggleToc,
+                className: TITLE_CLASSES,
+                textContent: "Table Of Contents",
+                onclick: () => updateState(TOGGLE_TOC),
             },
+            { tocListen: true },
         );
     }
 
-    function createToc(tocType = TYPE_TREE) {
+    function createTocContents(nextState) {
+        const { tocType } = nextState;
         let tocList;
         if (tocType == TYPE_TREE) {
             tocList = makeTreeToc(groupBy(getHeaders(), eqTagName));
         } else {
             tocList = makeFlatToc(getHeaders());
         }
-        return appendChildren(
+        return tocList;
+    }
+
+    function createToc(nextState) {
+        const wrapped = appendChildren(
             createElement(
                 "div",
                 { className: TOC_CLASSES, id: "mktc-toc-list-wrapper" },
-                { tocType },
+                { tocListen: true },
             ),
-            tocList,
+            createTocContents(nextState),
         );
+        const cmp = (a, b) => a.tocType - b.tocType;
+        wrapped.tocStateHandler = binaryStateHandler(cmp, initialState, rebuildTocList).bind(wrapped);
+        return wrapped;
+    }
+
+    function binaryStateHandler(cmp, prevState, onChange) {
+        return function (nextState) {
+            if (cmp(prevState, nextState) !== 0)
+                onChange(nextState);
+            return binaryStateHandler(cmp, nextState, onChange);
+        }
     }
 
     function createContainer() {
-        return createElement("div", { className: CONTAINER_CLASSES, id: "mktc-container" });
+        const cmp = (a, b) => a.tocOpen - b.tocOpen;
+        const container = createElement(
+            "div",
+            { className: CONTAINER_CLASSES, id: "mktc-container" },
+            { tocListen: true, tocStateKey: "tocOpen" },
+        );
+        container.tocStateHandler = binaryStateHandler(cmp, initialState, toggleToc).bind(container);
+        return container;
+    }
+
+    function elementStateHandler({ target, detail: { state } }) {
+        if (target.tocStateHandler)
+            target.tocStateHandler = target.tocStateHandler(state).bind(target);
     }
 
     function initToc() {
         const container = createContainer();
         appendChildren(
             document.body,
-            appendChildren(container, createPlaceHolder(), createToc()),
+            appendChildren(container, createPlaceHolder(), createToc(initialState)),
         );
+        document.querySelectorAll("[data-toc-listen]").forEach(node => (
+            node.addEventListener("updatetocstate", elementStateHandler)
+        ));
         return container;
     }
 
@@ -229,43 +317,29 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         }
     }
 
-    function rebuildTocList(tocType) {
-        const oldToc = getTocListWrapper();
-        if (oldToc === null) {
+    function rebuildTocList(nextState) {
+        const wrapper = getTocListWrapper();
+        if (wrapper === null) {
             return;
         }
-        const newToc = createToc(tocType === undefined ? oldToc.dataset.tocType : tocType);
-        if (!oldToc.classList.contains("mktc-hidden")) {
-            newToc.classList.remove("mktc-hidden");
-        }
-        oldToc.replaceWith(newToc);
+        const newContents = createTocContents(nextState);
+        wrapper.firstChild.replaceWith(newContents);
     }
 
-    function toggleTocMode() {
-        const oldToc = getTocListWrapper()
-        if (oldToc === null) {
-            return;
-        }
-        rebuildTocList(oldToc.dataset.tocType === TYPE_TREE ? TYPE_FLAT : TYPE_TREE);
+    function toggleFeature({ featureOpen }) {
+        return featureOpen ? initToc() : destroyToc();
     }
 
-    function toggleFeature() {
-        return getContainer() === null ? initToc() : destroyToc();
-    }
-
-    function toggleToc(_) {
-        const container = getContainer() === null ? initToc() : getContainer();
-
-        container.classList.toggle("mktc-rounded-lg");
-        container.classList.toggle("mktc-rounded-md");
-        container.classList.toggle("mktc-overflow-y-hidden");
-        container.classList.toggle("mktc-overflow-y-scroll");
-
+    function toggleToc({ tocOpen }) {
+        const container = getContainer();
         const tocListWrapper = getTocListWrapper();
-        tocListWrapper.classList.toggle("mktc-hidden");
-
-        const placeHolder = getPlaceHolder();
-        placeHolder.classList.toggle("mktc--rotate-180");
+        if (tocOpen) {
+            container.classList.add("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
+            tocListWrapper.classList.remove("mktc-hidden");
+        } else {
+            container.classList.remove("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
+            tocListWrapper.classList.add("mktc-hidden");
+        }
     }
 
     function toggleSubTocs() {
@@ -276,22 +350,20 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
 
     function receiveMessage({ message }) {
         switch (message) {
-            case TOGGLE_FEATURE:
-                return toggleFeature();
-            case TOGGLE_TOC:
-                return toggleToc();
             case REFRESH_TOC:
-                return rebuildTocList();
-            case TOGGLE_MODE:
-                return toggleTocMode();
-            case TOGGLE_SUB_TOCS:
-                return toggleSubTocs();
+                return rebuildTocList(getState());
             default:
-                console.error(`maketoc.js: unknown message (${message})`);
+                return updateState(message);
         }
     }
 
+    document.body.tocStateHandler = binaryStateHandler(
+        (a, b) => a.featureOpen - b.featureOpen,
+        initialState,
+        toggleFeature,
+    ).bind(document.body);
+    document.body.dataset.tocListen = true;
+    document.body.addEventListener("updatetocstate", elementStateHandler);
+
     browser.runtime.onMessage.addListener(receiveMessage);
-    let gen = state();
-    console.log(gen.next());
 })();
