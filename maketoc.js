@@ -39,7 +39,7 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
 
     const SUMMARY_CLASSES = ``;
 
-    const initialState = { featureOpen: false, tocOpen: false, subNavExpanded: false, tocType: TYPE_TREE };
+    const initialState = { featureOpen: false, tocListOpen: false, subNavExpanded: false, tocType: TYPE_TREE };
 
     function* sequence() {
         let val = 1;
@@ -58,13 +58,17 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
             console.debug(currentState);
             switch (message) {
                 case TOGGLE_FEATURE:
-                    currentState = { ...currentState, featureOpen: !currentState.featureOpen };
+                    if (currentState.featureOpen && currentState.tocListOpen) {
+                        currentState = { ...currentState, featureOpen: false, tocListOpen: false };
+                    } else {
+                        currentState = { ...currentState, featureOpen: !currentState.featureOpen };
+                    }
                     break;
                 case TOGGLE_TOC:
-                    if (!currentState.featureOpen && !currentState.tocOpen) {
-                        currentState = { ...currentState, tocOpen: true, featureOpen: true };
+                    if (!currentState.featureOpen && !currentState.tocListOpen) {
+                        currentState = { ...currentState, tocListOpen: true, featureOpen: true };
                     } else {
-                        currentState = { ...currentState, tocOpen: !currentState.tocOpen };
+                        currentState = { ...currentState, tocListOpen: !currentState.tocListOpen };
                     }
                     break;
                 case TOGGLE_SUB_TOCS:
@@ -85,14 +89,15 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
 
     function initReducer() {
         const reducer = _reducer();
-        console.debug(reducer.next().value);
-        return { reducer, state: "foo" };
+        return { reducer, state: reducer.next().value };
     }
 
     function _updateState(reducer, message) {
         const nextState = reducer.next(message).value;
         const event = new CustomEvent("updatetocstate", { detail: { state: nextState } });
-        document.querySelectorAll("[data-toc-listen]").forEach(element => element.dispatchEvent(event));
+        document.querySelectorAll("[data-toc-listen]").forEach((element) => {
+            element.dispatchEvent(event);
+        });
         return nextState;
     }
 
@@ -245,7 +250,6 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
                 textContent: "Table Of Contents",
                 onclick: () => updateState(TOGGLE_TOC),
             },
-            { tocListen: true },
         );
     }
 
@@ -260,7 +264,7 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         return tocList;
     }
 
-    function createToc(nextState) {
+    function createTocList(nextState) {
         const wrapped = appendChildren(
             createElement(
                 "div",
@@ -269,27 +273,29 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
             ),
             createTocContents(nextState),
         );
+
         const cmp = (a, b) => a.tocType - b.tocType;
-        wrapped.tocStateHandler = binaryStateHandler(cmp, initialState, rebuildTocList).bind(wrapped);
+        wrapped.tocStateHandler = binaryStateHandler(cmp, nextState, rebuildTocList).bind(wrapped);
         return wrapped;
     }
 
     function binaryStateHandler(cmp, prevState, onChange) {
         return function (nextState) {
-            if (cmp(prevState, nextState) !== 0)
+            const result = cmp(prevState, nextState);
+            if (result !== 0)
                 onChange(nextState);
             return binaryStateHandler(cmp, nextState, onChange);
         }
     }
 
-    function createContainer() {
-        const cmp = (a, b) => a.tocOpen - b.tocOpen;
+    function createContainer(nextState) {
+        const cmp = (a, b) => a.tocListOpen - b.tocListOpen;
         const container = createElement(
             "div",
             { className: CONTAINER_CLASSES, id: "mktc-container" },
-            { tocListen: true, tocStateKey: "tocOpen" },
+            { tocListen: true },
         );
-        container.tocStateHandler = binaryStateHandler(cmp, initialState, toggleToc).bind(container);
+        container.tocStateHandler = binaryStateHandler(cmp, nextState, toggleTocList).bind(container);
         return container;
     }
 
@@ -298,12 +304,18 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
             target.tocStateHandler = target.tocStateHandler(state).bind(target);
     }
 
-    function initToc() {
-        const container = createContainer();
+    function initToc(nextState) {
+        const container = createContainer(nextState);
+        const wrappedTocList = createTocList(nextState);
         appendChildren(
             document.body,
-            appendChildren(container, createPlaceHolder(), createToc(initialState)),
+            appendChildren(container, createPlaceHolder(), wrappedTocList),
         );
+
+        if (nextState.tocListOpen) {
+            showTocList();
+        }
+
         document.querySelectorAll("[data-toc-listen]").forEach(node => (
             node.addEventListener("updatetocstate", elementStateHandler)
         ));
@@ -326,19 +338,33 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         wrapper.firstChild.replaceWith(newContents);
     }
 
-    function toggleFeature({ featureOpen }) {
-        return featureOpen ? initToc() : destroyToc();
+    function toggleFeature(nextState) {
+        const { featureOpen } = nextState;
+        return featureOpen ? initToc(nextState) : destroyToc();
     }
 
-    function toggleToc({ tocOpen }) {
+    function showTocList() {
         const container = getContainer();
+        container.classList.add("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
+
         const tocListWrapper = getTocListWrapper();
-        if (tocOpen) {
-            container.classList.add("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
-            tocListWrapper.classList.remove("mktc-hidden");
+        tocListWrapper.classList.remove("mktc-hidden");
+    }
+
+    function hideTocList() {
+        const container = getContainer();
+        container.classList.remove("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
+
+        const tocListWrapper = getTocListWrapper();
+        tocListWrapper.classList.add("mktc-hidden");
+    }
+
+    function toggleTocList(nextState) {
+        const { tocListOpen } = nextState;
+        if (tocListOpen) {
+            showTocList();
         } else {
-            container.classList.remove("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
-            tocListWrapper.classList.add("mktc-hidden");
+            hideTocList();
         }
     }
 
