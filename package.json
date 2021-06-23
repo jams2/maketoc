@@ -5,16 +5,22 @@
     "author": "Joshua Munn",
     "license": "GPL-3.0-or-later",
     "scripts": {
-        "dev": "postcss src/maketoc.css -o dist/maketoc.css --watch --env development --verbose",
-        "build": "postcss src/maketoc.css -o dist/maketoc.css --env production --verbose"
+        "dev": "webpack --node-env development --watch",
+        "build": "webpack --node-env production"
     },
     "devDependencies": {
         "autoprefixer": "^10.2.6",
+        "css-loader": "^5.2.6",
+        "mini-css-extract-plugin": "^1.6.0",
         "postcss": "^8.3.5",
         "postcss-cli": "^8.3.1",
         "postcss-import": "^14.0.2",
+        "postcss-loader": "^6.1.0",
         "postcss-nesting": "^8.0.1",
-        "tailwindcss": "^2.2.2"
+        "tailwindcss": "^2.2.2",
+        "webextension-polyfill": "^0.8.0",
+        "webpack": "^5.40.0",
+        "webpack-cli": "^4.7.2"
     },
     "dependencies": {}
 }

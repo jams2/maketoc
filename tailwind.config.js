@@ -3,7 +3,7 @@ module.exports = {
     mode: "jit",
     prefix: "mktc-",
     corePlugins: { preflight: false },
-    purge: ["./maketoc.js"],
+    purge: ["./src/maketoc.js", "./src/constants.js"],
     darkMode: false, // or 'media' or 'class'
     theme: {
         extend: {

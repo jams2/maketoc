@@ -1,8 +1,12 @@
-const TOGGLE_FEATURE = "toggle-feature";
-const TOGGLE_TOC = "toggle-toc";
-const REFRESH_TOC = "refresh-toc";
-const TOGGLE_MODE = "toggle-toc-mode";
-const TOGGLE_SUB_TOCS = "toggle-sub-tocs";
+import {
+    TOGGLE_FEATURE,
+    TOGGLE_TOC,
+    REFRESH_TOC,
+    TOGGLE_MODE,
+    TOGGLE_SUB_TOCS,
+} from "./messages.js";
+
+const browser = require("webextension-polyfill");
 
 function logError(error) {
     console.error(`background.js: ${error}`);

@@ -1,44 +1,29 @@
+import {
+    TOGGLE_FEATURE,
+    TOGGLE_TOC,
+    REFRESH_TOC,
+    TOGGLE_MODE,
+    TOGGLE_SUB_TOCS,
+    RESET_STATE
+} from "./messages.js";
+import {
+    TYPE_TREE,
+    TITLE_MAX_LENGTH,
+    HEAVY_X,
+    CONTAINER_CLASSES,
+    TOC_CLASSES,
+    TITLE_CLASSES,
+    OL_CLASSES,
+    LI_CLASSES,
+    SUMMARY_CLASSES,
+    X_CLASSES
+} from "./constants.js";
+import "./maketoc.css";
+
+const browser = require("webextension-polyfill");
 "use strict";
 
 (function () {
-    const TOGGLE_FEATURE = "toggle-feature";
-    const TOGGLE_TOC = "toggle-toc";
-    const REFRESH_TOC = "refresh-toc";
-    const TOGGLE_MODE = "toggle-toc-mode";
-    const TOGGLE_SUB_TOCS = "toggle-sub-tocs";
-    const RESET_STATE = "reset-state";
-
-    const TYPE_TREE = true;
-    const TYPE_FLAT = false;
-
-    const TITLE_MAX_LENGTH = 50;
-    const RIGHT_ARROW = "→";
-
-    const CONTAINER_CLASSES = `
-mktc-font-sans
-mktc-top-8 mktc-left-8 mktc-fixed
-mktc-bg-white mktc-prose mktc-prose-sm
-mktc-rounded-md mktc-shadow-md hover:mktc-shadow-lg mktc-transition-shadow mktc-duration-300
-mktc-max-h-3/4 mktc-overflow-x-hidden mktc-overflow-y-hidden
-mktc-z-max`;
-
-    const TOC_CLASSES = `
-mktc-hidden mktc-pb-4 mktc-pr-8 mktc-pl-2 mktc-mt-0
-mktc-text-sm mktc-text-gray-900 mktc-mt-1`;
-
-    const TITLE_CLASSES = `
-mktc-block mktc-cursor-pointer mktc-w-auto
-mktc-mr-auto mktc-px-4 mktc-py-2
-mktc-bg-green-100 mktc-text-green-900 mktc-font-bold`;
-
-    const OL_CLASSES = `mktc-p-0 mktc-pl-8`;
-
-    const LI_CLASSES = `
-mktc-p-0 mktc-py-2 last-of-type:mktc-pb-0
-mktc-border-b-2 last-of-type:mktc-border-b-0`;
-
-    const SUMMARY_CLASSES = ``;
-
     const initialState = { featureOpen: false, tocListOpen: false, subNavExpanded: false, tocType: TYPE_TREE };
 
     function* sequence() {
@@ -53,9 +38,10 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         let message = yield currentState;
 
         while (true) {
-            console.group(`MAKETOC REDUCER (${sequenceGenerator.next().value})`)
-            console.debug(message);
-            console.debug(currentState);
+            const logHeader = `╒═════╡ MAKETOC REDUCER (${sequenceGenerator.next().value}) ╞═══`;
+            console.debug(logHeader);
+            console.debug(`│ message: ${message}`);
+            console.debug(`│ last state: ${JSON.stringify(currentState)}`);
             switch (message) {
                 case TOGGLE_FEATURE:
                     if (currentState.featureOpen && currentState.tocListOpen) {
@@ -81,8 +67,8 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
                     currentState = initialState;
                     break;
             }
-            console.debug(currentState);
-            console.groupEnd()
+            console.debug(`│ next state: ${JSON.stringify(currentState)}`);
+            console.debug(`╘${"═".repeat(logHeader.length - 1)}`);
             message = yield currentState;
         }
     }
@@ -111,6 +97,10 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         return function (...rest) {
             return f(...args, ...rest);
         }
+    }
+
+    function compareFactory(key) {
+        return (a, b) => a[key] - b[key];
     }
 
 
@@ -241,16 +231,32 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
     }
 
     function createPlaceHolder() {
-        return createElement(
+        const placeHolder = createElement(
             "div",
             {
                 tabIndex: "0",
                 id: "mktc-placeholder",
                 className: TITLE_CLASSES,
-                textContent: "Table Of Contents",
-                onclick: () => updateState(TOGGLE_TOC),
             },
         );
+        const text = createElement(
+            "span",
+            {
+                className: "mktc-mr-2",
+                textContent: "Table Of Contents",
+                className: "mktc-cursor-pointer w-min",
+                onclick: () => updateState(TOGGLE_TOC),
+            },
+        )
+        const xButton = createElement(
+            "span",
+            {
+                innerHTML: HEAVY_X,
+                className: X_CLASSES,
+                onclick: () => updateState(TOGGLE_FEATURE),
+            },
+        );
+        return appendChildren(placeHolder, text, xButton);
     }
 
     function createTocContents(nextState) {
@@ -264,6 +270,11 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         return tocList;
     }
 
+    function bindAttribute(element, value, key = "tocStateHandler") {
+        element[key] = value.bind(element);
+        return element;
+    }
+
     function createTocList(nextState) {
         const wrapped = appendChildren(
             createElement(
@@ -273,10 +284,10 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
             ),
             createTocContents(nextState),
         );
-
-        const cmp = (a, b) => a.tocType - b.tocType;
-        wrapped.tocStateHandler = binaryStateHandler(cmp, nextState, rebuildTocList).bind(wrapped);
-        return wrapped;
+        return bindAttribute(
+            wrapped,
+            binaryStateHandler(compareFactory("tocType"), nextState, rebuildTocList),
+        );
     }
 
     function binaryStateHandler(cmp, prevState, onChange) {
@@ -289,19 +300,20 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
     }
 
     function createContainer(nextState) {
-        const cmp = (a, b) => a.tocListOpen - b.tocListOpen;
         const container = createElement(
             "div",
             { className: CONTAINER_CLASSES, id: "mktc-container" },
             { tocListen: true },
         );
-        container.tocStateHandler = binaryStateHandler(cmp, nextState, toggleTocList).bind(container);
-        return container;
+        return bindAttribute(
+            container,
+            binaryStateHandler(compareFactory("tocListOpen"), nextState, toggleTocList),
+        );
     }
 
     function elementStateHandler({ target, detail: { state } }) {
         if (target.tocStateHandler)
-            target.tocStateHandler = target.tocStateHandler(state).bind(target);
+            return bindAttribute(target, target.tocStateHandler(state));
     }
 
     function initToc(nextState) {
@@ -353,10 +365,12 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
 
     function hideTocList() {
         const container = getContainer();
-        container.classList.remove("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
+        if (container !== null)
+            container.classList.remove("mktc-overflow-y-hidden", "mktc-overflow-y-scroll");
 
         const tocListWrapper = getTocListWrapper();
-        tocListWrapper.classList.add("mktc-hidden");
+        if (tocListWrapper !== null)
+            tocListWrapper.classList.add("mktc-hidden");
     }
 
     function toggleTocList(nextState) {
@@ -383,13 +397,12 @@ mktc-border-b-2 last-of-type:mktc-border-b-0`;
         }
     }
 
-    document.body.tocStateHandler = binaryStateHandler(
-        (a, b) => a.featureOpen - b.featureOpen,
-        initialState,
-        toggleFeature,
-    ).bind(document.body);
-    document.body.dataset.tocListen = true;
-    document.body.addEventListener("updatetocstate", elementStateHandler);
+    const body = bindAttribute(
+        document.body,
+        binaryStateHandler(compareFactory("featureOpen"), initialState, toggleFeature),
+    );
+    body.dataset.tocListen = true;
+    body.addEventListener("updatetocstate", elementStateHandler);
 
     browser.runtime.onMessage.addListener(receiveMessage);
 })();
