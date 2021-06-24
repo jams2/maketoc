@@ -3,7 +3,7 @@ import {
     TOGGLE_TOC,
     REFRESH_TOC,
     TOGGLE_MODE,
-    TOGGLE_SUB_TOCS,
+    TOGGLE_SUBTREES,
 } from "./messages.js";
 
 const browser = require("webextension-polyfill");
@@ -20,7 +20,7 @@ function dispatchKeyEvent(message) {
         case TOGGLE_TOC:
         case REFRESH_TOC:
         case TOGGLE_MODE:
-        case TOGGLE_SUB_TOCS:
+        case TOGGLE_SUBTREES:
             sendMessage(message);
             break;
         default:

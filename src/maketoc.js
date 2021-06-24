@@ -3,10 +3,18 @@ import {
     TOGGLE_TOC,
     REFRESH_TOC,
     TOGGLE_MODE,
-    TOGGLE_SUB_TOCS,
+    TOGGLE_SUBTREES,
     RESET_STATE
 } from "./messages.js";
 import {
+    SUBTREE_STATE,
+    CLOSED,
+    OPEN,
+    SUPER_OPEN,
+    CLOSE_LOCAL,
+    OPEN_LOCAL,
+    OPEN_ALL,
+    CLOSE_ALL,
     TYPE_TREE,
     TITLE_MAX_LENGTH,
     HEAVY_X,
@@ -24,7 +32,7 @@ const browser = require("webextension-polyfill");
 "use strict";
 
 (function () {
-    const initialState = { featureOpen: false, tocListOpen: false, subNavExpanded: false, tocType: TYPE_TREE };
+    const initialState = { featureOpen: false, tocListOpen: false, subTreesExpanded: false, tocType: TYPE_TREE };
 
     function* sequence() {
         let val = 1;
@@ -57,8 +65,8 @@ const browser = require("webextension-polyfill");
                         currentState = { ...currentState, tocListOpen: !currentState.tocListOpen };
                     }
                     break;
-                case TOGGLE_SUB_TOCS:
-                    currentState = { ...currentState, subNavExpanded: !currentState.subNavExpanded };
+                case TOGGLE_SUBTREES:
+                    currentState = { ...currentState, subTreesExpanded: !currentState.subTreesExpanded };
                     break;
                 case TOGGLE_MODE:
                     currentState = { ...currentState, tocType: !currentState.tocType };
@@ -187,7 +195,53 @@ const browser = require("webextension-polyfill");
         return createElement("ol", { className: OL_CLASSES });
     }
 
-    function makeTreeToc(groups) {
+    function getSubTreeState({ subTreesExpanded }) {
+        return subTreesExpanded ? OPEN_ALL : CLOSE_ALL;
+    }
+
+    function updateSubTree(element, nextState) {
+        element.dataset.tocLocalState = nextState;
+        switch (nextState) {
+            case CLOSED:
+                element.open = false;
+                break;
+            case OPEN:
+            case SUPER_OPEN:
+                element.open = true;
+                break;
+        }
+    }
+
+    function handleSummaryClick(event) {
+        const details = event.target.parentNode;
+        const prev = details.dataset.tocLocalState;
+        const action = details.open ? CLOSE_LOCAL : OPEN_LOCAL;
+        details.dataset.tocLocalState = SUBTREE_STATE[prev][action];
+    }
+
+    function makeDetails(summaryContents, nextState) {
+        const summary = appendChildren(
+            createElement(
+                "summary",
+                { className: SUMMARY_CLASSES, onclick: handleSummaryClick },
+            ),
+            summaryContents,
+        )
+        const details = appendChildren(
+            createElement(
+                "details",
+                { open: false },
+                { tocListen: true, tocLocalState: CLOSED },
+            ),
+            summary,
+        );
+        return bindAttribute(
+            appendChildren(details, makeOl()),
+            stateMachineHandler(SUBTREE_STATE, nextState, getSubTreeState, updateSubTree),
+        );
+    }
+
+    function makeTreeToc(groups, nextState) {
         const root = makeOl();
         let current = root;
         groups.forEach((group, i, xs) => {
@@ -196,15 +250,10 @@ const browser = require("webextension-polyfill");
                 // insert all at current level
             } else if (depth(group[0]) > depth(xs[i - 1][0])) {
                 // go deeper
-                const summary = appendChildren(
-                    createElement("summary", { className: SUMMARY_CLASSES }),
-                    current.lastChild.firstChild.cloneNode(true),  // anchor in last <li>
-                )
-                const details = appendChildren(createElement("details"), summary);
-                const newList = makeOl();
-                details.appendChild(newList);
+                // pass makeDetails the <a> in the last <li> of the current <ol>
+                const details = makeDetails(current.lastChild.firstChild.cloneNode(true), nextState);
                 current.lastChild.replaceWith(wrapInListItem(details));
-                current = newList;
+                current = details.childNodes[1];  // the contained ordered list
             } else {
                 // back up
                 current = current.parentNode.parentNode.parentNode;
@@ -263,7 +312,7 @@ const browser = require("webextension-polyfill");
         const { tocType } = nextState;
         let tocList;
         if (tocType == TYPE_TREE) {
-            tocList = makeTreeToc(groupBy(getHeaders(), eqTagName));
+            tocList = makeTreeToc(groupBy(getHeaders(), eqTagName), nextState);
         } else {
             tocList = makeFlatToc(getHeaders());
         }
@@ -290,12 +339,28 @@ const browser = require("webextension-polyfill");
         );
     }
 
-    function binaryStateHandler(cmp, prevState, onChange) {
-        return function (nextState) {
+    function binaryStateHandler(cmp, prevState, effect) {
+        return (_, nextState) => {
             const result = cmp(prevState, nextState);
             if (result !== 0)
-                onChange(nextState);
-            return binaryStateHandler(cmp, nextState, onChange);
+                effect(nextState);
+            return binaryStateHandler(cmp, nextState, effect);
+        }
+    }
+
+    function stateMachineHandler(machine, prevState, getAction, effect) {
+        return (target, nextState) => {
+            console.groupCollapsed(target.tagName);
+            console.log(prevState.subTreesExpanded, nextState.subTreesExpanded);
+            console.log(prevState.subTreesExpanded - nextState.subTreesExpanded);
+            console.groupEnd();
+            if (prevState.subTreesExpanded - nextState.subTreesExpanded !== 0) {
+                const prevLocalState = target.dataset.tocLocalState;
+                const action = getAction(nextState);
+                const nextLocalState = machine[prevLocalState][action];
+                effect(target, nextLocalState);
+            }
+            return stateMachineHandler(machine, nextState, getAction, effect);
         }
     }
 
@@ -313,7 +378,7 @@ const browser = require("webextension-polyfill");
 
     function elementStateHandler({ target, detail: { state } }) {
         if (target.tocStateHandler)
-            return bindAttribute(target, target.tocStateHandler(state));
+            return bindAttribute(target, target.tocStateHandler(target, state));
     }
 
     function initToc(nextState) {
@@ -380,12 +445,6 @@ const browser = require("webextension-polyfill");
         } else {
             hideTocList();
         }
-    }
-
-    function toggleSubTocs() {
-        document.querySelectorAll("#mktc-container details").forEach(elt => (
-            elt.open = !elt.open
-        ));
     }
 
     function receiveMessage({ message }) {
