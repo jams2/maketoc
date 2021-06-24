@@ -99,7 +99,7 @@ const browser = require("webextension-polyfill");
         }
     }
 
-    function compareFactory(key) {
+    function compareState(key) {
         return (a, b) => a[key] - b[key];
     }
 
@@ -286,7 +286,7 @@ const browser = require("webextension-polyfill");
         );
         return bindAttribute(
             wrapped,
-            binaryStateHandler(compareFactory("tocType"), nextState, rebuildTocList),
+            binaryStateHandler(compareState("tocType"), nextState, rebuildTocList),
         );
     }
 
@@ -307,7 +307,7 @@ const browser = require("webextension-polyfill");
         );
         return bindAttribute(
             container,
-            binaryStateHandler(compareFactory("tocListOpen"), nextState, toggleTocList),
+            binaryStateHandler(compareState("tocListOpen"), nextState, toggleTocList),
         );
     }
 
@@ -399,7 +399,7 @@ const browser = require("webextension-polyfill");
 
     const body = bindAttribute(
         document.body,
-        binaryStateHandler(compareFactory("featureOpen"), initialState, toggleFeature),
+        binaryStateHandler(compareState("featureOpen"), initialState, toggleFeature),
     );
     body.dataset.tocListen = true;
     body.addEventListener("updatetocstate", elementStateHandler);
