@@ -8,6 +8,13 @@
         "dev": "webpack --env development --watch",
         "build": "webpack --env production"
     },
+    "prettier": {
+        "trailingComma": "es5",
+        "tabWidth": 4,
+        "semi": true,
+        "singleQuote": false,
+        "printWidth": 89
+    },
     "devDependencies": {
         "autoprefixer": "^10.2.6",
         "css-loader": "^5.2.6",
