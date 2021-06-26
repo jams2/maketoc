@@ -1,42 +1,3 @@
-/* detail box states
- * 0: closed
- * 1: open - opened by local click or "open all", from 0
- * 2: openPrime - opened by "open all" from 1
- */
-
-export const CLOSED = "CLOSED";
-export const OPEN = "OPEN";
-export const SUPER_OPEN = "SUPER_OPEN";
-export const CLOSE_LOCAL = "CLOSE_LOCAL";
-export const OPEN_LOCAL = "OPEN_LOCAL";
-export const CLOSE_ALL = "CLOSE_ALL";
-export const OPEN_ALL = "OPEN_ALL";
-
-export const SUBTREE_STATE = {
-    [CLOSED]: {
-        [CLOSE_LOCAL]: CLOSED,
-        [OPEN_LOCAL]: OPEN,
-        [CLOSE_ALL]: CLOSED,
-        [OPEN_ALL]: OPEN,
-    },
-    [OPEN]: {
-        [CLOSE_LOCAL]: CLOSED,
-        [OPEN_LOCAL]: OPEN,
-        [CLOSE_ALL]: CLOSED,
-        [OPEN_ALL]: SUPER_OPEN,
-    },
-    [SUPER_OPEN]: {
-        [CLOSE_LOCAL]: CLOSED,
-        [OPEN_LOCAL]: SUPER_OPEN,
-        [CLOSE_ALL]: OPEN,
-        [OPEN_ALL]: SUPER_OPEN,
-    },
-};
-
-
-
-export const TYPE_TREE = true;
-export const TYPE_FLAT = false;
 export const TITLE_MAX_LENGTH = 50;
 export const HEAVY_X = "&#10006;";
 
@@ -75,4 +36,3 @@ export const X_CLASSES = `
 mktc-ml-auto mktc-mr-0 mktc-font-normal
 mktc-p-1 mktc-cursor-pointer
 `;
-

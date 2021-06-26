@@ -1,13 +1,12 @@
 const path = require("path");
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = (env) => ({
     mode: env.development ? "development" : "production",
     devtool: env.development ? "inline-source-map" : "source-map",
     entry: {
-        maketoc: "./src/maketoc.js",
-        background: "./src/background.js",
+        maketoc: "./src/maketoc.ts",
+        background: "./src/background.ts",
     },
     output: {
         filename: "[name].js",
@@ -18,12 +17,16 @@ module.exports = (env) => ({
         rules: [
             {
                 test: /\.css/i,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    "css-loader",
-                    "postcss-loader",
-                ],
-            }
-        ]
-    }
+                use: [MiniCssExtractPlugin.loader, "css-loader", "postcss-loader"],
+            },
+            {
+                test: /\.ts$/,
+                use: "ts-loader",
+                exclude: /node_modules/,
+            },
+        ],
+    },
+    resolve: {
+        extensions: [".ts"],
+    },
 });

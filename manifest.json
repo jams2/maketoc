@@ -6,12 +6,14 @@
         "48": "icons/toc_black_48dp.svg"
     },
     "permissions": ["activeTab", "tabs"],
-    "content_scripts": [{
-        "matches": ["<all_urls>"],
-        "js": ["dist/maketoc.js"],
-        "css": ["dist/maketoc.css"],
-        "match_about_blank": true
-    }],
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["dist/maketoc.js"],
+            "css": ["dist/maketoc.css"],
+            "match_about_blank": true
+        }
+    ],
     "background": {
         "scripts": ["dist/background.js"]
     },
@@ -40,7 +42,7 @@
                 "default": "Shift+Alt+Up"
             }
         },
-        "toggle-sub-tocs": {
+        "toggle-subtrees": {
             "description": "Toggle all sub-menus open/closed (tree mode only)",
             "suggested_key": {
                 "default": "Shift+Alt+Right"
