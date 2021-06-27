@@ -12,7 +12,7 @@ mktc-z-max
 
 export const TOC_CLASSES = `
 mktc-hidden mktc-pb-4 mktc-pr-8 mktc-pl-2 mktc-mt-0
-mktc-text-sm mktc-text-gray-900 mktc-mt-1
+mktc-text-sm mktc-text-gray-900 mktc-mt-1 mktc-relative
 `;
 
 export const TITLE_CLASSES = `
@@ -22,13 +22,16 @@ mktc-bg-green-100 mktc-text-green-900 mktc-font-bold
 mktc-flex mktc-items-center
 mktc-sticky mktc-top-0
 mktc-shadow-sm
+mktc-z-10
 `;
 
 export const OL_CLASSES = `mktc-p-0 mktc-pl-8`;
 
 export const LI_CLASSES = `
 mktc-p-0 mktc-py-2 last-of-type:mktc-pb-0
-mktc-border-b-2 last-of-type:mktc-border-b-0`;
+mktc-border-b-2 last-of-type:mktc-border-b-0
+mktc-relative
+`;
 
 export const SUMMARY_CLASSES = ``;
 

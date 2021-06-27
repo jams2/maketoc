@@ -564,3 +564,9 @@ Add the correct display in Chrome and Safari.
     @apply mktc-border-b-2 mktc-pb-2;
 }
 
+.mktc-anchor::before {
+    content: attr(data-string-id);
+    @apply mktc-absolute mktc-left-[-1.5rem] mktc-bg-purple-100;
+    @apply mktc-rounded-full mktc-text-xs mktc-font-bold mktc-text-purple-900 mktc-p-1;
+    @apply mktc-shadow-sm mktc-h-[1rem] mktc-align-middle mktc-hidden;
+}

@@ -1,7 +1,13 @@
 {
     "manifest_version": 2,
     "name": "maketoc",
-    "version": "1.0",
+    "version": "0.1",
+    "author": "Joshua Munn",
+    "developer": {
+        "name": "Joshua Munn",
+        "url": "https://www.joshuamunn.com"
+    },
+    "homepage_url": "https://github.com/jams2/maketoc",
     "permissions": ["activeTab", "tabs"],
     "content_scripts": [
         {
@@ -44,6 +50,12 @@
             "suggested_key": {
                 "default": "Shift+Alt+Right"
             }
+        }
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{6d466146-94e3-4aa4-ab8c-c2355b6e903c}",
+            "update_url": "https://maketoc.joshuamunn.com/updates.json"
         }
     }
 }

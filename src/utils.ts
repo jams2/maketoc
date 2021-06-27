@@ -58,7 +58,7 @@ export function* flatMap<A, B>(f: (a: A) => Iterable<B>, xs: Iterable<A>): Strea
     }
 }
 
-export function* flatten<A>(xs: Stream<Iterable<A>>): Stream<A> {
+export function* flatten<A>(xs: Iterable<Iterable<A>>): Stream<A> {
     for (const x of xs) {
         for (const y of x) {
             yield y;
@@ -98,7 +98,7 @@ export function* emptyString(): StringGenerator {
     yield "";
 }
 
-export function stringGeneratorCombinations(
+export function stringCombinations(
     stringGenerators: StringGenerator[]
 ): StringGenerator {
     return lazyMap(stringCat, product(...stringGenerators));

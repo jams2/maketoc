@@ -10,8 +10,8 @@ module.exports = {
             maxHeight: {
                 "3/4": "75vh",
             },
+            zIndex: { max: "2147483647" },
         },
-        zIndex: { max: "2147483647" },
     },
     variants: {
         extend: {},

@@ -7,6 +7,7 @@ import {
     GroupedHeadings,
     HTMLTocStateElement,
     TocType,
+    Stream,
 } from "./types";
 import {
     SUBTREE_STATE,
@@ -17,8 +18,9 @@ import {
     getState,
     initialState,
     intGenerator,
+    alphaStream,
 } from "./state";
-import { compose, bindTocStateHandler, slugify } from "./utils";
+import { compose, bindTocStateHandler, slugify, partial } from "./utils";
 import {
     TITLE_MAX_LENGTH,
     HEAVY_X,
@@ -100,14 +102,23 @@ function depth(header: HTMLElement): string {
     return header.tagName;
 }
 
-function toLink(heading: HTMLHeadingElement): HTMLAnchorElement {
+function toLink(
+    stringIds: Stream<string>,
+    heading: HTMLHeadingElement
+): HTMLAnchorElement {
     if (!heading.id) {
         heading.id = `${slugify(heading.innerText)}-${intGenerator.next().value}`;
     }
-    return <HTMLAnchorElement>createElement("a", {
-        href: `#${heading.id}`,
-        textContent: renderTitle(heading.textContent),
-    });
+    const anchor = <HTMLAnchorElement>createElement(
+        "a",
+        {
+            href: `#${heading.id}`,
+            textContent: renderTitle(heading.textContent),
+            className: "mktc-anchor",
+        },
+        { stringId: stringIds.next().value }
+    );
+    return anchor;
 }
 
 function wrapInListItem(element: HTMLElement): HTMLLIElement {
@@ -118,9 +129,10 @@ function wrapInListItem(element: HTMLElement): HTMLLIElement {
 
 function makeListOfAnchorElements(
     oList: HTMLOListElement,
-    headers: HTMLHeadingElement[]
+    headers: HTMLHeadingElement[],
+    stringIds: Stream<string>
 ): HTMLOListElement {
-    const makeListItem = compose(wrapInListItem, toLink);
+    const makeListItem = compose(wrapInListItem, partial(toLink, stringIds));
     headers.forEach((header) => {
         oList.appendChild(makeListItem(header));
     });
@@ -190,6 +202,7 @@ function makeDetails(
 function makeNestedLists(groups: GroupedHeadings, nextState: State): HTMLOListElement {
     const root = makeOList();
     let current = root;
+    const stringIds = alphaStream();
     groups.forEach((group: HTMLHeadingElement[], i: number, xs: GroupedHeadings) => {
         let nextLevel = depth(group[0]);
         if (i === 0 || nextLevel === depth(xs[i - 1][0])) {
@@ -207,7 +220,7 @@ function makeNestedLists(groups: GroupedHeadings, nextState: State): HTMLOListEl
             // back up
             current = <HTMLOListElement>current.parentNode.parentNode.parentNode;
         }
-        makeListOfAnchorElements(current, group);
+        makeListOfAnchorElements(current, group, stringIds);
     });
     return root;
 }
@@ -215,7 +228,8 @@ function makeNestedLists(groups: GroupedHeadings, nextState: State): HTMLOListEl
 function makeFlatOrderedList(headers: HTMLHeadingElement[]): HTMLOListElement {
     return makeListOfAnchorElements(
         <HTMLOListElement>createElement("ol", { className: OL_CLASSES }),
-        headers
+        headers,
+        alphaStream()
     );
 }
 

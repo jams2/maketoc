@@ -19,7 +19,7 @@ import {
     zipWith,
     generateForever,
     generateLowerCaseLetters,
-    stringGeneratorCombinations,
+    stringCombinations,
 } from "./utils";
 
 function* incrementingIntegers(start: number = 1): Stream<number> {
@@ -31,7 +31,7 @@ export const intGenerator = incrementingIntegers();
 
 export function alphaStream(): Stream<string> {
     return flatMap(
-        stringGeneratorCombinations,
+        stringCombinations,
         <Stream<StringGenerator[]>>(
             zipWith(
                 (size, stringGenerator) => Array(size).fill(stringGenerator),
