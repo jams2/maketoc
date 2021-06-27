@@ -8,8 +8,39 @@ import {
     HTMLTocStateElement,
     TocStateHandler,
     Effect,
+    SubTreeStateMachine,
+    Stream,
+    StringGenerator,
 } from "./types";
-import { partial, bindTocStateHandler, sequence } from "./utils";
+import {
+    partial,
+    bindTocStateHandler,
+    flatMap,
+    zipWith,
+    generateForever,
+    generateLowerCaseLetters,
+    stringGeneratorCombinations,
+} from "./utils";
+
+function* incrementingIntegers(start: number = 1): Stream<number> {
+    let val = start;
+    while (true) yield val++;
+}
+
+export const intGenerator = incrementingIntegers();
+
+export function alphaStream(): Stream<string> {
+    return flatMap(
+        stringGeneratorCombinations,
+        <Stream<StringGenerator[]>>(
+            zipWith(
+                (size, stringGenerator) => Array(size).fill(stringGenerator),
+                incrementingIntegers(),
+                generateForever(generateLowerCaseLetters)
+            )
+        )
+    );
+}
 
 export const initialState: State = {
     featureOpen: false,
@@ -19,14 +50,11 @@ export const initialState: State = {
 };
 
 function* _reducer(initial = initialState): Generator<State, void, Action | void> {
-    const sequenceGenerator = sequence();
     let currentState = initial;
     let action = yield currentState;
 
     while (true) {
-        const logHeader = `╒═════╡ MAKETOC REDUCER (${
-            sequenceGenerator.next().value
-        }) ╞═══`;
+        const logHeader = `╒═════╡ MAKETOC REDUCER (${intGenerator.next().value}) ╞═══`;
         console.debug(logHeader);
         console.debug(`│ action: ${action}`);
         console.debug(`│ last state: ${JSON.stringify(currentState)}`);
@@ -146,17 +174,11 @@ export function elementStateHandler({
         );
 }
 
-export type SubTreeStateMachine = {
-    readonly [key in SubTreeState]: {
-        readonly [key in SubTreeAction]: SubTreeState;
-    };
-};
-
 export const SUBTREE_STATE: SubTreeStateMachine = {
     /* detail box states
      * 0: closed
      * 1: open - opened by local click or "open all", from 0
-     * 2: openPrime - opened by "open all" from 1
+     * 2: pinned_open - opened by "open all" from 1
      */
     [SubTreeState.CLOSED]: {
         [SubTreeAction.CLOSE_LOCAL]: SubTreeState.CLOSED,
@@ -168,13 +190,13 @@ export const SUBTREE_STATE: SubTreeStateMachine = {
         [SubTreeAction.CLOSE_LOCAL]: SubTreeState.CLOSED,
         [SubTreeAction.OPEN_LOCAL]: SubTreeState.OPEN,
         [SubTreeAction.CLOSE_ALL]: SubTreeState.CLOSED,
-        [SubTreeAction.OPEN_ALL]: SubTreeState.SUPER_OPEN,
+        [SubTreeAction.OPEN_ALL]: SubTreeState.PINNED_OPEN,
     },
-    [SubTreeState.SUPER_OPEN]: {
+    [SubTreeState.PINNED_OPEN]: {
         [SubTreeAction.CLOSE_LOCAL]: SubTreeState.CLOSED,
-        [SubTreeAction.OPEN_LOCAL]: SubTreeState.SUPER_OPEN,
+        [SubTreeAction.OPEN_LOCAL]: SubTreeState.PINNED_OPEN,
         [SubTreeAction.CLOSE_ALL]: SubTreeState.OPEN,
-        [SubTreeAction.OPEN_ALL]: SubTreeState.SUPER_OPEN,
+        [SubTreeAction.OPEN_ALL]: SubTreeState.PINNED_OPEN,
     },
 };
 

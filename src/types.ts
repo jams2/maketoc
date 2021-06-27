@@ -1,3 +1,7 @@
+export type Stream<A> = Generator<A, any, any>;
+export type StreamFactory<A> = (a?: any) => Stream<A>;
+export type StringGenerator = Stream<string>;
+
 export type Effect = void;
 
 export const enum Action {
@@ -33,7 +37,7 @@ export type Reducer = Generator<State, void, Action>;
 export const enum SubTreeState {
     CLOSED = "CLOSED",
     OPEN = "OPEN",
-    SUPER_OPEN = "SUPER_OPEN",
+    PINNED_OPEN = "PINNED_OPEN",
 }
 
 export type GroupedHeadings = HTMLHeadingElement[][];
@@ -42,4 +46,10 @@ export type TocStateHandler = (target: EventTarget, state: State) => TocStateHan
 
 export type HTMLTocStateElement = HTMLElement & {
     tocStateHandler: TocStateHandler;
+};
+
+export type SubTreeStateMachine = {
+    readonly [key in SubTreeState]: {
+        readonly [key in SubTreeAction]: SubTreeState;
+    };
 };

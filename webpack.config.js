@@ -29,4 +29,7 @@ module.exports = (env) => ({
     resolve: {
         extensions: [".ts"],
     },
+    optimization: {
+        minimize: false,
+    },
 });
