@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "maketoc",
-    "version": "0.1",
+    "version": "0.1.1",
     "author": "Joshua Munn",
     "developer": {
         "name": "Joshua Munn",
