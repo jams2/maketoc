@@ -61,18 +61,9 @@ function* _reducer(initial = initialState): Generator<State, void, Action | void
         console.debug(`│ last state: ${JSON.stringify(currentState)}`);
         switch (action) {
             case Action.TOGGLE_FEATURE:
-                if (currentState.featureOpen && currentState.tocListOpen) {
-                    currentState = {
-                        ...currentState,
-                        featureOpen: false,
-                        tocListOpen: false,
-                    };
-                } else {
-                    currentState = {
-                        ...currentState,
-                        featureOpen: !currentState.featureOpen,
-                    };
-                }
+                currentState = currentState.featureOpen
+                    ? { ...initial, tocType: currentState.tocType }
+                    : { ...currentState, featureOpen: !currentState.featureOpen };
                 break;
             case Action.TOGGLE_TOC:
                 if (!currentState.featureOpen && !currentState.tocListOpen) {
