@@ -3,7 +3,6 @@ export const HEAVY_X = "&#10006;";
 
 export const CONTAINER_CLASSES = `
 mktc-font-sans
-mktc-top-8 mktc-left-8 mktc-fixed
 mktc-bg-white mktc-prose mktc-prose-sm
 mktc-rounded-md mktc-shadow-md hover:mktc-shadow-lg mktc-transition-shadow mktc-duration-300
 mktc-max-h-3/4 mktc-overflow-x-hidden mktc-overflow-y-hidden

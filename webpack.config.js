@@ -3,7 +3,8 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = (env) => ({
     mode: env.development ? "development" : "production",
-    devtool: env.development ? "inline-source-map" : "source-map",
+    devtool: "inline-source-map",
+    target: "es5",
     entry: {
         maketoc: "./src/maketoc.ts",
         background: "./src/background.ts",
@@ -27,7 +28,7 @@ module.exports = (env) => ({
         ],
     },
     resolve: {
-        extensions: [".ts"],
+        extensions: [".ts", "..."],
     },
     optimization: {
         minimize: false,
