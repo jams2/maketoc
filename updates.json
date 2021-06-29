@@ -1,0 +1,16 @@
+{
+    "addons": {
+        "{6d466146-94e3-4aa4-ab8c-c2355b6e903c}": {
+            "updates": [
+                {
+                    "version": "0.1.1",
+                    "update_link": "https://maketoc.joshuamunn.com/maketoc-0.1.1-fx.xpi"
+                },
+                {
+                    "version": "0.1.3",
+                    "update_link": "https://maketoc.joshuamunn.com/maketoc-0.1.3-fx.xpi"
+                }
+            ]
+        }
+    }
+}
