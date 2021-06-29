@@ -20,6 +20,10 @@ export const enum SubTreeAction {
     OPEN_ALL = "OPEN_ALL",
 }
 
+export const enum TocEvent {
+    UPDATE_STATE = "UPDATE_STATE",
+}
+
 export const enum TocType {
     FLAT = 0,
     TREE = 1,

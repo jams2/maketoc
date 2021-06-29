@@ -11,6 +11,7 @@ import {
     SubTreeStateMachine,
     Stream,
     StringGenerator,
+    TocEvent,
 } from "./types";
 import {
     partial,
@@ -125,13 +126,22 @@ function initReducer(): { reducer: Reducer; state: void | State } {
 
 function _updateState(reducer: Reducer, action: Action): void | State {
     const nextState = reducer.next(action).value;
-    const event = new CustomEvent("updatetocstate", {
+    const event = new CustomEvent(TocEvent.UPDATE_STATE, {
         detail: { state: nextState },
     });
     document.querySelectorAll("[data-toc-listen]").forEach((element) => {
         element.dispatchEvent(event);
     });
     return nextState;
+}
+
+export function subscribe(
+    element: HTMLElement,
+    event: keyof typeof TocEvent,
+    handler: (e: Event) => any
+): HTMLElement {
+    element.addEventListener(event, handler);
+    return element;
 }
 
 export function binaryStateHandler(

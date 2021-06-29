@@ -8,6 +8,7 @@ import {
     HTMLTocStateElement,
     TocType,
     Stream,
+    TocEvent,
 } from "./types";
 import {
     SUBTREE_STATE,
@@ -19,6 +20,7 @@ import {
     initialState,
     intGenerator,
     alphaStream,
+    subscribe,
 } from "./state";
 import { compose, bindTocStateHandler, slugify, partial } from "./utils";
 import {
@@ -178,13 +180,17 @@ function makeDetails(
         }),
         summaryContents
     );
-    const details = appendChildren(
-        createElement(
-            "details",
-            { open: false },
-            { tocListen: true, tocLocalState: SubTreeState.CLOSED }
+    const details = subscribe(
+        appendChildren(
+            createElement(
+                "details",
+                { open: false },
+                { tocListen: true, tocLocalState: SubTreeState.CLOSED }
+            ),
+            summary
         ),
-        summary
+        TocEvent.UPDATE_STATE,
+        elementStateHandler
     );
     return <HTMLTocStateElement>(
         bindTocStateHandler(
@@ -265,15 +271,13 @@ function createPlaceHolder(): HTMLDivElement {
 }
 
 function createContainer(nextState: State): HTMLTocStateElement {
-    const container = <HTMLDivElement>(
-        createElement(
-            "div",
-            { className: CONTAINER_CLASSES, id: "mktc-container" },
-            { tocListen: true }
-        )
+    const container = createElement(
+        "div",
+        { className: CONTAINER_CLASSES, id: "mktc-container" },
+        { tocListen: true }
     );
     return bindTocStateHandler(
-        container,
+        subscribe(container, TocEvent.UPDATE_STATE, elementStateHandler),
         binaryStateHandler(compareState("tocListOpen"), nextState, toggleTocList)
     );
 }
@@ -289,12 +293,6 @@ function initToc(nextState: State): HTMLTocStateElement {
     if (nextState.tocListOpen) {
         showTocList();
     }
-
-    document
-        .querySelectorAll("[data-toc-listen]")
-        .forEach((node: HTMLElement) =>
-            node.addEventListener("updatetocstate", elementStateHandler)
-        );
     return container;
 }
 
@@ -315,7 +313,7 @@ function createTocList(nextState: State): HTMLTocStateElement {
         createTocContents(nextState)
     );
     return bindTocStateHandler(
-        wrapped,
+        subscribe(wrapped, TocEvent.UPDATE_STATE, elementStateHandler),
         binaryStateHandler(compareState("tocType"), nextState, rebuildTocList)
     );
 }
@@ -324,11 +322,6 @@ function rebuildTocList(nextState: State): Effect {
     const wrapper = getTocListWrapper();
     if (wrapper === null) return;
     const newContents = createTocContents(nextState);
-    newContents
-        .querySelectorAll("[data-toc-listen]")
-        .forEach((node: HTMLTocStateElement) =>
-            node.addEventListener("updatetocstate", elementStateHandler)
-        );
     wrapper.firstChild.replaceWith(newContents);
 }
 
@@ -393,5 +386,5 @@ const body = bindTocStateHandler(
     binaryStateHandler(compareState("featureOpen"), initialState, toggleFeature)
 );
 body.dataset.tocListen = "true";
-body.addEventListener("updatetocstate", elementStateHandler);
+body.addEventListener(TocEvent.UPDATE_STATE, elementStateHandler);
 browser.runtime.onMessage.addListener(receiveMessage);
